@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorMessage = document.getElementById('error-message');
     const exchangeRateChart = document.getElementById('exchange-rate-chart');
     const exportCsvBtn = document.getElementById('export-csv-btn');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
     
     // Chart instance
     let chart = null;
@@ -113,6 +114,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Dark mode toggle functionality
+    if (darkModeToggle) {
+        // Check for saved user preference
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        
+        // Set initial state based on saved preference or system preference
+        if (savedDarkMode || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && localStorage.getItem('darkMode') === null)) {
+            document.body.classList.add('dark-mode');
+            darkModeToggle.checked = true;
+        }
+        
+        // Toggle dark mode when the switch is clicked
+        darkModeToggle.addEventListener('change', () => {
+            if (darkModeToggle.checked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'false');
+            }
+            
+            // Update chart colors if chart exists
+            if (chart) {
+                updateChart();
+            }
+        });
+    }
+
     // Update data button functionality
     updateDataBtn.addEventListener('click', fetchExchangeRates);
     
@@ -199,57 +228,124 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to fetch currency data from public API
     async function fetchCurrencyData(baseCurrency, targetCurrency, startDate, endDate) {
-        // Use ExchangeRate.host API which has CORS support and historical data
-        const apiUrl = `https://api.exchangerate.host/timeseries?start_date=${startDate}&end_date=${endDate}&base=${baseCurrency}&symbols=${targetCurrency}`;
-        
+        // Try Open Exchange Rates API first (supports ZAR and many fiat currencies)
         try {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
+            // For crypto currencies, we'll use a different approach
+            const isCrypto = ['BTC', 'ETH', 'USDC', 'USDT'].includes(targetCurrency) || 
+                            ['BTC', 'ETH', 'USDC', 'USDT'].includes(baseCurrency);
             
-            if (!data.success) {
-                throw new Error('API request failed');
+            if (!isCrypto) {
+                // For fiat currency pairs, use Open Exchange Rates API
+                const rates = {};
+                
+                // Generate dates between start and end
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                
+                // For each date in the range, fetch the rate
+                for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+                    const dateStr = dt.toISOString().split('T')[0];
+                    const formattedDate = dateStr.replace(/-/g, '.');
+                    
+                    // Fetch the rate for this specific date
+                    const apiUrl = `https://open.er-api.com/v6/${formattedDate}/${baseCurrency}`;
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    
+                    if (data.result === 'success' && data.rates && data.rates[targetCurrency]) {
+                        rates[dateStr] = data.rates[targetCurrency];
+                    }
+                }
+                
+                return rates;
             }
-            
+        } catch (error) {
+            console.warn(`Open Exchange Rates API failed for ${baseCurrency} to ${targetCurrency}:`, error);
+            // Continue to fallback methods
+        }
+        
+        // Fallback for crypto or when Open Exchange Rates API fails
+        try {
+            // For crypto currencies or as a fallback, use synthetic data based on USD rates
             const rates = {};
             
-            // Process the response
-            for (const [date, rateData] of Object.entries(data.rates)) {
-                if (targetCurrency in rateData) {
-                    rates[date] = rateData[targetCurrency];
+            // First try to get base currency to USD rate using Open Exchange Rates API
+            let baseToUsdRates = {};
+            
+            if (baseCurrency !== 'USD') {
+                try {
+                    // Get base currency to USD rates for the date range
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    
+                    for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+                        const dateStr = dt.toISOString().split('T')[0];
+                        const formattedDate = dateStr.replace(/-/g, '.');
+                        
+                        const apiUrl = `https://open.er-api.com/v6/${formattedDate}/USD`;
+                        const response = await fetch(apiUrl);
+                        const data = await response.json();
+                        
+                        if (data.result === 'success' && data.rates && data.rates[baseCurrency]) {
+                            // We get USD to base, but we need base to USD, so take the inverse
+                            baseToUsdRates[dateStr] = 1 / data.rates[baseCurrency];
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to get ${baseCurrency} to USD rates:`, error);
+                }
+            } else {
+                // If base is USD, rate is always 1
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                
+                for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+                    const dateStr = dt.toISOString().split('T')[0];
+                    baseToUsdRates[dateStr] = 1;
                 }
             }
             
-            // Special handling for crypto currencies not supported by the API
-            if (['BTC', 'ETH', 'USDC', 'USDT'].includes(targetCurrency)) {
-                // For crypto, we'll use a combination of USD rates and crypto/USD rates
-                // This is a simplified approach - in a real app, you'd use a crypto-specific API
+            // Generate synthetic rates for crypto currencies
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const startTimestamp = start.getTime();
+            const dayMs = 24 * 60 * 60 * 1000;
+            
+            // Base rates for crypto (approximate values)
+            const cryptoBaseRates = {
+                'BTC': 40000,
+                'ETH': 2500,
+                'USDC': 1,
+                'USDT': 1
+            };
+            
+            for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+                const dateStr = dt.toISOString().split('T')[0];
+                const daysSinceStart = Math.floor((dt.getTime() - startTimestamp) / dayMs);
                 
-                // For demo purposes, generate synthetic data for crypto
-                const baseRate = targetCurrency === 'BTC' ? 40000 : 
-                                targetCurrency === 'ETH' ? 2500 : 1;
-                                
-                const startTimestamp = new Date(startDate).getTime();
-                const dayMs = 24 * 60 * 60 * 1000;
+                // Add some randomness to simulate price fluctuations
+                const randomFactor = 0.98 + (Math.random() * 0.04); // ±2%
                 
-                for (const date of Object.keys(rates)) {
-                    const daysSinceStart = Math.floor((new Date(date).getTime() - startTimestamp) / dayMs);
+                if (['BTC', 'ETH', 'USDC', 'USDT'].includes(targetCurrency)) {
+                    // Base currency to crypto
+                    const baseToUsd = baseToUsdRates[dateStr] || 1; // Default to 1 if not found
+                    const cryptoRate = cryptoBaseRates[targetCurrency] * randomFactor;
                     
-                    // Add some randomness to simulate price fluctuations
-                    const randomFactor = 0.98 + (Math.random() * 0.04); // ±2%
+                    // Formula: 1 Base = X USD, 1 USD = 1/Y Crypto, so 1 Base = X/Y Crypto
+                    rates[dateStr] = baseToUsd / cryptoRate;
+                } else if (['BTC', 'ETH', 'USDC', 'USDT'].includes(baseCurrency)) {
+                    // Crypto to base currency
+                    const cryptoRate = cryptoBaseRates[baseCurrency] * randomFactor;
+                    const usdToTarget = 1 / (baseToUsdRates[dateStr] || 1); // Default to 1 if not found
                     
-                    if (targetCurrency === 'BTC' || targetCurrency === 'ETH') {
-                        // For crypto to fiat: multiply by base rate and add some randomness
-                        rates[date] = rates[date] * baseRate * randomFactor;
-                    } else {
-                        // For stablecoins: roughly 1:1 with USD with tiny fluctuations
-                        rates[date] = rates[date] * randomFactor;
-                    }
+                    // Formula: 1 Crypto = Y USD, 1 USD = Z Target, so 1 Crypto = Y*Z Target
+                    rates[dateStr] = cryptoRate * usdToTarget;
                 }
             }
             
             return rates;
         } catch (error) {
-            console.error(`Error fetching data for ${baseCurrency} to ${targetCurrency}:`, error);
+            console.error(`Failed to generate synthetic data for ${baseCurrency} to ${targetCurrency}:`, error);
             return {};
         }
     }
@@ -265,10 +361,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Prepare datasets
         const datasets = [];
-        const colors = [
-            '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', 
-            '#1abc9c', '#d35400', '#34495e', '#7f8c8d', '#c0392b'
-        ];
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        
+        // Colors for light and dark mode
+        const colors = isDarkMode ? 
+            ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e', '#7f8c8d', '#c0392b'] :
+            ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e', '#7f8c8d', '#c0392b'];
         
         let colorIndex = 0;
         for (const [currency, rates] of Object.entries(currentData.rates)) {
@@ -295,6 +393,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: {
                         position: 'top',
+                        labels: {
+                            color: isDarkMode ? '#ffffff' : '#333333'
+                        }
                     },
                     tooltip: {
                         mode: 'index',
@@ -305,7 +406,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     x: {
                         ticks: {
                             maxRotation: 45,
-                            minRotation: 45
+                            minRotation: 45,
+                            color: isDarkMode ? '#cccccc' : '#333333'
+                        },
+                        grid: {
+                            color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: isDarkMode ? '#cccccc' : '#333333'
+                        },
+                        grid: {
+                            color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                         }
                     }
                 }
