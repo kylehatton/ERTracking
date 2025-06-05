@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Rate Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Date range picker dependencies -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Exchange Rate Tracker</h1>
+                <p>Track and analyze currency exchange rates over time</p>
+            </div>
+            <div class="dark-mode-container">
+                <span class="dark-mode-icon">🌓</span>
+                <label class="dark-mode-toggle">
+                    <input type="checkbox" id="dark-mode-toggle">
+                    <span class="dark-mode-slider"></span>
+                </label>
+            </div>
+        </header>
+
+        <!-- Controls Section -->
+        <div class="card">
+            <div class="controls-section">
+                <!-- Currency Selection -->
+                <div class="control-group">
+                    <h3>Currencies</h3>
+                    <div class="currency-list">
+                        <div class="currency-tag">ZAR to USDC <span class="swap" title="Swap currencies"><span class="swap-icon"></span></span> <span class="remove">&times;</span></div>
+                        <div class="currency-tag">ZAR to USDT <span class="swap" title="Swap currencies"><span class="swap-icon"></span></span> <span class="remove">&times;</span></div>
+                        <div class="currency-tag">ZAR to USD <span class="swap" title="Swap currencies"><span class="swap-icon"></span></span> <span class="remove">&times;</span></div>
+                        <div class="currency-tag">ZAR to BTC <span class="swap" title="Swap currencies"><span class="swap-icon"></span></span> <span class="remove">&times;</span></div>
+                        <div class="currency-tag">ZAR to ETH <span class="swap" title="Swap currencies"><span class="swap-icon"></span></span> <span class="remove">&times;</span></div>
+                    </div>
+                    <button id="add-currency-btn" class="btn" style="margin-top: 15px;">Add Currency</button>
+                </div>
+
+                <!-- Date Range Selection -->
+                <div class="control-group">
+                    <h3>Date Range</h3>
+                    <label for="date-range">Select period:</label>
+                    <input type="text" id="date-range" name="date-range" class="form-control" />
+                </div>
+
+                <!-- Update Button -->
+                <div class="control-group" style="display: flex; align-items: flex-end;">
+                    <button id="update-data-btn" class="btn btn-accent" style="width: 100%;">Update Data</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="loading" id="loading-indicator">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message" id="error-message">
+            <p>Error loading data. Please try again.</p>
+        </div>
+
+        <!-- Visualization Section -->
+        <div class="card visualization-section">
+            <div class="tabs">
+                <div class="tab active" data-tab="graph">Graph</div>
+                <div class="tab" data-tab="table">Table</div>
+            </div>
+
+            <!-- Graph Tab -->
+            <div class="tab-content active" id="graph-tab">
+                <div class="graph-container">
+                    <canvas id="exchange-rate-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Table Tab -->
+            <div class="tab-content" id="table-tab">
+                <div class="table-container">
+                    <table id="exchange-rate-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>ZAR to USDC</th>
+                                <th>ZAR to USDT</th>
+                                <th>ZAR to USD</th>
+                                <th>ZAR to BTC</th>
+                                <th>ZAR to ETH</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table data will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="export-section">
+                    <button id="export-csv-btn" class="btn">Export to CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Average Section -->
+        <div class="card">
+            <h3>Monthly Averages</h3>
+            <div class="table-container">
+                <table id="monthly-average-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>ZAR to USDC</th>
+                            <th>ZAR to USDT</th>
+                            <th>ZAR to USD</th>
+                            <th>ZAR to BTC</th>
+                            <th>ZAR to ETH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Monthly average data will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Currency Modal -->
+    <div class="modal" id="add-currency-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Currency</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="base-currency">Base Currency:</label>
+                <select id="base-currency" class="form-control">
+                    <option value="ZAR" selected>ZAR (South African Rand)</option>
+                    <option value="USD">USD (US Dollar)</option>
+                    <option value="EUR">EUR (Euro)</option>
+                    <option value="GBP">GBP (British Pound)</option>
+                </select>
+                
+                <label for="target-currency" style="margin-top: 15px;">Target Currency:</label>
+                <select id="target-currency" class="form-control">
+                    <option value="USDC">USDC (USD Coin)</option>
+                    <option value="USDT">USDT (Tether)</option>
+                    <option value="USD">USD (US Dollar)</option>
+                    <option value="BTC">BTC (Bitcoin)</option>
+                    <option value="ETH">ETH (Ethereum)</option>
+                    <option value="EUR">EUR (Euro)</option>
+                    <option value="GBP">GBP (British Pound)</option>
+                    <option value="JPY">JPY (Japanese Yen)</option>
+                    <option value="AUD">AUD (Australian Dollar)</option>
+                    <option value="CAD">CAD (Canadian Dollar)</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-modal">Cancel</button>
+                <button id="confirm-add-currency" class="btn">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
