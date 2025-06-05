@@ -317,6 +317,40 @@ tr:hover {
   color: var(--accent-color);
 }
 
+.error-details {
+  font-size: 14px;
+  margin-top: 10px;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+/* Status Message */
+.status-message {
+  display: none;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  background-color: #d4edda;
+  color: #155724;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.status-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.dark-mode .status-message {
+  background-color: #204829;
+  color: #d4edda;
+}
+
+.dark-mode .status-message.error {
+  background-color: #442a2d;
+  color: #f8d7da;
+}
+
 /* Modal */
 .modal {
   display: none;
@@ -441,6 +475,69 @@ input:checked + .dark-mode-slider:before {
 .dark-mode-icon {
   margin-right: 8px;
   font-size: 16px;
+}
+
+/* Date Range Picker Dark Mode Overrides */
+.dark-mode .daterangepicker {
+  background-color: #343a40;
+  color: #e9ecef;
+  border-color: #495057;
+}
+
+.dark-mode .daterangepicker .calendar-table {
+  background-color: #343a40;
+  border-color: #495057;
+}
+
+.dark-mode .daterangepicker td.available:hover, 
+.dark-mode .daterangepicker th.available:hover {
+  background-color: #495057;
+}
+
+.dark-mode .daterangepicker td.active, 
+.dark-mode .daterangepicker td.active:hover {
+  background-color: #4dabf7;
+}
+
+.dark-mode .daterangepicker .calendar-table .next span, 
+.dark-mode .daterangepicker .calendar-table .prev span {
+  border-color: #e9ecef;
+}
+
+.dark-mode .daterangepicker .ranges li:hover, 
+.dark-mode .daterangepicker .ranges li.active {
+  background-color: #4dabf7;
+  color: #fff;
+}
+
+.dark-mode .daterangepicker .ranges li {
+  color: #e9ecef;
+}
+
+.dark-mode .daterangepicker:after {
+  border-bottom-color: #343a40;
+}
+
+.dark-mode .daterangepicker:before {
+  border-bottom-color: #495057;
+}
+
+.dark-mode .daterangepicker .drp-buttons {
+  border-top-color: #495057;
+}
+
+.dark-mode .daterangepicker .drp-selected {
+  color: #e9ecef;
+}
+
+.dark-mode .daterangepicker td,
+.dark-mode .daterangepicker th {
+  color: #e9ecef;
+}
+
+.dark-mode .daterangepicker .calendar-table .table-condensed th select {
+  background-color: #343a40;
+  color: #e9ecef;
 }
 
 /* Responsive adjustments for iframe embedding */

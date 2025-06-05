@@ -6,10 +6,11 @@ This is a static HTML/JS version of the Exchange Rate Tracker that can be embedd
 
 - Track daily exchange rates for multiple currency pairs
 - Swap currency pairs with a single click (e.g., ZAR to USD ↔ USD to ZAR)
-- Select custom date ranges with presets (last 7 days, last month, etc.)
+- Select custom date ranges with convenient presets
 - View data as interactive graphs or tables
 - Calculate monthly averages automatically
 - Export data to CSV for further analysis
+- Dark mode support with automatic system preference detection
 - Fully static implementation using only HTML, CSS, and JavaScript
 - Compatible with Notion embedding
 
@@ -17,7 +18,7 @@ This is a static HTML/JS version of the Exchange Rate Tracker that can be embedd
 
 ### Option 1: Deploy to GitHub Pages
 
-1. Create a new GitHub repository
+1. Create a new GitHub repository or use your existing one
 2. Upload the three files (`index.html`, `styles.css`, and `script.js`) to the repository
 3. Enable GitHub Pages in the repository settings
 4. Your Exchange Rate Tracker will be available at `https://[your-username].github.io/[repo-name]/`
@@ -62,21 +63,38 @@ Alternatively, you can use an iframe code:
 
 5. Click "Embed link"
 
-## Customization
+## Using Dark Mode
 
-You can customize the Exchange Rate Tracker by editing the files:
-
-- `index.html`: Structure of the tracker
-- `styles.css`: Visual appearance
-- `script.js`: Functionality and API integration
+The Exchange Rate Tracker includes a dark mode feature that can be toggled using the moon/sun icon in the top right corner. The app will also automatically detect your system's color scheme preference on first load.
 
 ## Technical Details
 
-- Uses the [ExchangeRate.host](https://exchangerate.host) API for currency data
+- Uses multiple API sources with fallback mechanisms for reliable data
 - Implements client-side data fetching with CORS support
 - Uses Chart.js for data visualization
 - Includes a date range picker for flexible time period selection
 - All processing happens in the browser with no backend requirements
+- Provides fallback mechanisms for cryptocurrency rates
+
+## Updates in this Version
+
+- Fixed data loading issues by implementing multiple API sources with fallback
+- Added dark mode support with system preference detection
+- Fixed dark mode styling for the date picker component
+- Added detailed status messages and error reporting
+- Improved error handling and fallback mechanisms for unsupported currency pairs
+- Enhanced visualization for both light and dark modes
+- Added responsive design improvements for better embedding
+
+## Troubleshooting
+
+If you encounter any issues:
+
+1. **Data not loading**: The app now uses multiple data sources with fallbacks. If one API fails, it will automatically try others or use synthetic data as a last resort.
+
+2. **Dark mode issues**: If the date picker doesn't match the dark mode theme, try toggling dark mode off and on again.
+
+3. **Browser console errors**: Check your browser's developer tools (F12) for any error messages that might help identify issues.
 
 ## Limitations
 
