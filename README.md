@@ -6,10 +6,11 @@ This is a static HTML/JS version of the Exchange Rate Tracker that can be embedd
 
 - Track daily exchange rates for multiple currency pairs
 - Swap currency pairs with a single click (e.g., ZAR to USD ↔ USD to ZAR)
-- Select custom date ranges with presets (last 7 days, last month, etc.)
+- Select custom date ranges with convenient presets
 - View data as interactive graphs or tables
 - Calculate monthly averages automatically
 - Export data to CSV for further analysis
+- Dark mode support with automatic system preference detection
 - Fully static implementation using only HTML, CSS, and JavaScript
 - Compatible with Notion embedding
 
@@ -62,21 +63,26 @@ Alternatively, you can use an iframe code:
 
 5. Click "Embed link"
 
-## Customization
+## Using Dark Mode
 
-You can customize the Exchange Rate Tracker by editing the files:
-
-- `index.html`: Structure of the tracker
-- `styles.css`: Visual appearance
-- `script.js`: Functionality and API integration
+The Exchange Rate Tracker includes a dark mode feature that can be toggled using the moon/sun icon in the top right corner. The app will also automatically detect your system's color scheme preference on first load.
 
 ## Technical Details
 
-- Uses the [ExchangeRate.host](https://exchangerate.host) API for currency data
+- Uses the [Open Exchange Rates API](https://open.er-api.com) for currency data
 - Implements client-side data fetching with CORS support
 - Uses Chart.js for data visualization
 - Includes a date range picker for flexible time period selection
 - All processing happens in the browser with no backend requirements
+- Provides fallback mechanisms for cryptocurrency rates
+
+## Updates in this Version
+
+- Fixed data loading issues by switching to a more reliable API
+- Added dark mode support with system preference detection
+- Improved error handling and fallback mechanisms for unsupported currency pairs
+- Enhanced visualization for both light and dark modes
+- Added responsive design improvements for better embedding
 
 ## Limitations
 
